@@ -3,7 +3,7 @@
              FlexibleContexts, UndecidableInstances, ConstraintKinds,
              ScopedTypeVariables, TypeInType #-}
 
-module Data.Type.Set (Set(..), Union, Unionable, union, quicksort, append,
+module Data.Type.Set (Set(..), TSet, Union, Unionable, TUnion, Intersection, Difference, union, quicksort, append,
                       Sort, Sortable, (:++), Split(..), Cmp, Filter, Flag(..),
                       Nub, Nubable(..), AsSet, asSet, IsSet, Subset(..),
                       Delete(..), Proxy(..), remove, Remove, (:\),
@@ -22,6 +22,10 @@ data Set (n :: [k]) where
     Empty :: Set '[]
     {--| Extend a set with an element -}
     Ext :: e -> Set s -> Set (e ': s)
+
+-- | Sometimes you might want to use this instead of Set to avoid name
+-- collisions.
+type TSet n = Set n
 
 instance Show (Set '[]) where
     show Empty = "{}"
@@ -81,6 +85,25 @@ union :: (Unionable s t) => Set s -> Set t -> Set (Union s t)
 union s t = nub (quicksort (append s t))
 
 type Unionable s t = (Sortable (s :++ t), Nubable (Sort (s :++ t)))
+
+type family TUnion a b where
+  TUnion (Set '[]) s = s
+  TUnion s (Set '[]) = s
+  TUnion (Set xs) (Set ys) = Set (Union xs ys)
+
+type family Intersection a b where
+  Intersection (Set '[]) s = Set '[]
+  Intersection s (Set '[]) = Set '[]
+  Intersection (Set (x ': xs)) (Set ys) =
+    TUnion (If (MemberP x ys) (Set '[x]) (Set '[])) (Intersection (Set xs) (Delete x (Set ys)))
+
+type family Difference a b where
+  Difference a (Set '[]) = a
+  Difference (Set (x ': xs)) (Set ys) =
+    TUnion (If (MemberP x ys) (Set '[]) (Set '[x])) (Difference (Set xs) (Set ys))
+
+type family Insert a s where
+  Insert x (Set xs) = Set (Union x xs)
 
 {-| List append (essentially set disjoint union) -}
 type family (:++) (x :: [k]) (y :: [k]) :: [k] where
