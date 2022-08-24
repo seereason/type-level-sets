@@ -99,6 +99,7 @@ type family Intersection a b where
 
 type family Difference a b where
   Difference a (Set '[]) = a
+  Difference (Set '[]) a = Set '[]
   Difference (Set (x ': xs)) (Set ys) =
     TUnion (If (MemberP x ys) (Set '[]) (Set '[x])) (Difference (Set xs) (Set ys))
 
