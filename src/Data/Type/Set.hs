@@ -23,10 +23,6 @@ data Set (n :: [k]) where
     {--| Extend a set with an element -}
     Ext :: e -> Set s -> Set (e ': s)
 
--- | Sometimes you might want to use this instead of Set to avoid name
--- collisions.
-type TSet n = Set n
-
 instance Show (Set '[]) where
     show Empty = "{}"
 
@@ -85,6 +81,9 @@ union :: (Unionable s t) => Set s -> Set t -> Set (Union s t)
 union s t = nub (quicksort (append s t))
 
 type Unionable s t = (Sortable (s :++ t), Nubable (Sort (s :++ t)))
+
+type family TSet l where
+  TSet s = Set (AsSet s)
 
 type family TUnion a b where
   TUnion (Set '[]) s = s
