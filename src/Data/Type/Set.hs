@@ -104,7 +104,7 @@ type family Difference a b where
     TUnion (If (MemberP x ys) (Set '[]) (Set '[x])) (Difference (Set xs) (Set ys))
 
 type family Insert a s where
-  Insert x (Set xs) = Set (Union x xs)
+  Insert x (Set xs) = Set (Union '[x] xs)
 
 {-| List append (essentially set disjoint union) -}
 type family (:++) (x :: [k]) (y :: [k]) :: [k] where
