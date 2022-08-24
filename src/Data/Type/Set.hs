@@ -2,12 +2,13 @@
              MultiParamTypeClasses, FlexibleInstances, PolyKinds,
              FlexibleContexts, UndecidableInstances, ConstraintKinds,
              ScopedTypeVariables, TypeInType #-}
+{-# OPTIONS -Wno-unticked-promoted-constructors -Wno-unused-imports #-}
 
 module Data.Type.Set (Set(..), TSet, Union, Unionable, TUnion, Intersection, Difference, union, quicksort, append,
                       Sort, Sortable, (:++), Split(..), Cmp, Filter, Flag(..),
                       Nub, Nubable(..), AsSet, asSet, IsSet, Subset(..),
-                      Delete(..), Proxy(..), remove, Remove, (:\),
-                      Elem(..), Member(..), MemberP, NonMember) where
+                      Delete, Proxy(..), remove, Remove, (:\), Insert,
+                      Elem(..), Member(..), MemberP, NonMember, SetProperties) where
 
 import GHC.TypeLits
 import Data.Type.Bool
@@ -188,7 +189,7 @@ class Subset s t where
    subset :: Set t -> Set s
 
 instance Subset '[] '[] where
-   subset xs = Empty
+   subset _xs = Empty
 
 instance {-# OVERLAPPABLE #-} Subset s t => Subset s (x ': t) where
    subset (Ext _ xs) = subset xs
@@ -200,7 +201,7 @@ instance {-# OVERLAPS #-} Subset s t => Subset (x ': s) (x ': t) where
 {-| Type-level quick sort for normalising the representation of sets -}
 type family Sort (xs :: [k]) :: [k] where
             Sort '[]       = '[]
-            Sort (x ': xs) = ((Sort (Filter FMin x xs)) :++ '[x]) :++ (Sort (Filter FMax x xs))
+            Sort (x ': xs) = ((Sort (Filter 'FMin x xs)) :++ '[x]) :++ (Sort (Filter 'FMax x xs))
 
 data Flag = FMin | FMax
 
@@ -236,7 +237,7 @@ class FilterV (f::Flag) p xs where
     filterV :: Proxy f -> p -> Set xs -> Set (Filter f p xs)
 
 instance FilterV f p '[] where
-    filterV _ p Empty      = Empty
+    filterV _ _ Empty      = Empty
 
 instance (Conder ((Cmp x p) == LT), FilterV FMin p xs) => FilterV FMin p (x ': xs) where
     filterV f@Proxy p (Ext x xs) = cond (Proxy::(Proxy ((Cmp x p) == LT)))
@@ -250,10 +251,10 @@ class Conder g where
     cond :: Proxy g -> Set s -> Set t -> Set (If g s t)
 
 instance Conder True where
-    cond _ s t = s
+    cond _ s _ = s
 
 instance Conder False where
-    cond _ s t = t
+    cond _ _ t = t
 
 {-| Open-family for the ordering operation in the sort -}
 
@@ -278,7 +279,7 @@ instance Member a '[] where
   member _ Empty = False
 
 instance {-# OVERLAPS #-} Member a (a ': s) where
-  member _ (Ext x _)  = True
+  member _ (Ext _ _)  = True
 
 instance {-# OVERLAPPABLE #-} Member a s => Member a (b ': s) where
   member p (Ext _ xs) = member p xs

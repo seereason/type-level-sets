@@ -81,7 +81,7 @@ source-repository head
 library
   hs-source-dirs:       src
   other-extensions:     TypeInType
-
+  ghc-options:          -Wall -Wredundant-constraints
 
   exposed-modules:      Data.Type.Set
                         Data.Type.Map

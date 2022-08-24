@@ -6,6 +6,7 @@ The implementation is similar to that shown in the paper.
              TypeFamilies, UndecidableInstances, MultiParamTypeClasses,
              FlexibleInstances, GADTs, FlexibleContexts, ScopedTypeVariables,
              ConstraintKinds, IncoherentInstances #-}
+{-# OPTIONS -Wno-unticked-promoted-constructors #-}
 
 module Data.Type.Map (Mapping(..), Union, Unionable, union, append, Var(..), Map(..),
                         ext, empty, mapLength,
@@ -193,7 +194,7 @@ class FilterV (f::Flag) k v xs where
     filterV :: Proxy f -> Var k -> v -> Map xs -> Map (Filter f (k :-> v) xs)
 
 instance FilterV f k v '[] where
-    filterV _ k v Empty      = Empty
+    filterV _ _ _ Empty      = Empty
 
 instance (Conder (Cmp x (k :-> v) == LT), FilterV FMin k v xs) => FilterV FMin k v (x ': xs) where
     filterV f@Proxy k v (Ext k' v' xs) =
@@ -229,17 +230,17 @@ instance {-# OVERLAPPABLE #-}
 instance {-# OVERLAPS #-}
        (Combinable v v', Nubable ((k :-> Combine v v') ': s))
     => Nubable ((k :-> v) ': (k :-> v') ': s) where
-    nub (Ext k v (Ext k' v' s)) = nub (Ext k (combine v v') s)
+    nub (Ext k v (Ext _ v' s)) = nub (Ext k (combine v v') s)
 
 
 class Conder g where
     cond :: Proxy g -> Map s -> Map t -> Map (If g s t)
 
 instance Conder True where
-    cond _ s t = s
+    cond _ s _ = s
 
 instance Conder False where
-    cond _ s t = t
+    cond _ _ t = t
 
 
 {-| Splitting a union of maps, given the maps we want to split it into -}
@@ -267,7 +268,7 @@ class Submap s t where
    submap :: Map t -> Map s
 
 instance Submap '[] '[] where
-   submap xs = Empty
+   submap _ = Empty
 
 instance {-# OVERLAPPABLE #-} Submap s t => Submap s (x ': t) where
    submap (Ext _ _ xs) = submap xs
