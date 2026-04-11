@@ -1,7 +1,7 @@
 {-# LANGUAGE GADTs, DataKinds, KindSignatures, TypeOperators, TypeFamilies,
              MultiParamTypeClasses, FlexibleInstances, PolyKinds,
              FlexibleContexts, UndecidableInstances, ConstraintKinds,
-             ScopedTypeVariables, TypeInType #-}
+             ScopedTypeVariables #-}
 {-# OPTIONS -Wno-unticked-promoted-constructors -Wno-unused-imports #-}
 
 module Data.Type.Set (Set(..), TSet, Union, Unionable, TUnion, Intersection, Difference, union, quicksort, append,
