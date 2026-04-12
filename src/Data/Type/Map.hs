@@ -19,6 +19,7 @@ module Data.Type.Map (Mapping(..), Union, Unionable, union, append, Var(..), Map
                         Submap, submap) where
 
 import GHC.TypeLits
+import Data.Kind (Type)
 import Data.Proxy (Proxy(..))
 import Data.Type.Bool
 import Data.Type.Equality
@@ -76,7 +77,7 @@ instance KnownSymbol k => Show (Var k) where
     show = symbolVal
 
 {-| A value-level heterogenously-typed Map (with type-level representation in terms of lists) -}
-data Map (n :: [Mapping Symbol *]) where
+data Map (n :: [Mapping Symbol Type]) where
     Empty :: Map '[]
     Ext :: Var k -> v -> Map m -> Map ((k :-> v) ': m)
 

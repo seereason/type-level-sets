@@ -1,7 +1,7 @@
 {-# LANGUAGE GADTs, DataKinds, KindSignatures, TypeOperators, TypeFamilies,
              MultiParamTypeClasses, FlexibleInstances, PolyKinds,
              FlexibleContexts, UndecidableInstances, ConstraintKinds,
-             ScopedTypeVariables #-}
+             ScopedTypeVariables, StandaloneKindSignatures #-}
 {-# OPTIONS -Wno-unticked-promoted-constructors -Wno-unused-imports #-}
 
 module Data.Type.Set (Set(..), TSet, Union, Unionable, TUnion, Intersection, Difference, union, quicksort, append,
@@ -11,13 +11,14 @@ module Data.Type.Set (Set(..), TSet, Union, Unionable, TUnion, Intersection, Dif
                       Elem(..), Member(..), MemberP, NonMember, SetProperties) where
 
 import GHC.TypeLits
+import Data.Kind (Type)
 import Data.Proxy (Proxy(Proxy))
 import Data.Type.Bool
 import Data.Type.Equality
 
 -- Value-level 'Set' representation,  essentially a list
---type Set :: [k] -> Type
-data Set (n :: [k]) where
+type Set :: [Type] -> Type
+data Set (n :: [Type]) where
     {--| Construct an empty set -}
     Empty :: Set '[]
     {--| Extend a set with an element -}
@@ -62,15 +63,15 @@ asSet x = nub (quicksort x)
 type IsSet s = (s ~ Nub (Sort s))
 
 {-| Useful properties to be able to refer to someties -}
-type SetProperties (f :: [k]) =
-  ( Union f ('[] :: [k]) ~ f,
-    Split f ('[] :: [k]) f,
-    Union ('[] :: [k]) f ~ f,
-    Split ('[] :: [k]) f f,
+type SetProperties (f :: [Type]) =
+  ( Union f ('[] :: [Type]) ~ f,
+    Split f ('[] :: [Type]) f,
+    Union ('[] :: [Type]) f ~ f,
+    Split ('[] :: [Type]) f f,
     Union f f ~ f,
     Split f f f,
-    Unionable f ('[] :: [k]),
-    Unionable ('[] :: [k]) f
+    Unionable f ('[] :: [Type]),
+    Unionable ('[] :: [Type]) f
   )
 {-- Union --}
 
@@ -90,17 +91,22 @@ type family TUnion a b where
   TUnion s (Set '[]) = s
   TUnion (Set xs) (Set ys) = Set (Union xs ys)
 
+type IntersectList :: [k] -> [k] -> [k]
+type family IntersectList xs ys where
+  IntersectList '[] ys = '[]
+  IntersectList (x ': xs) ys = If (MemberP x ys) (x ': IntersectList xs ys) (IntersectList xs ys)
+
 type family Intersection a b where
-  Intersection (Set '[]) s = Set '[]
-  Intersection s (Set '[]) = Set '[]
-  Intersection (Set (x ': xs)) (Set ys) =
-    TUnion (If (MemberP x ys) (Set '[x]) (Set '[])) (Intersection (Set xs) (Delete x (Set ys)))
+  Intersection (Set xs) (Set ys) = Set (IntersectList xs ys)
+
+type DiffList :: [k] -> [k] -> [k]
+type family DiffList xs ys where
+  DiffList xs '[] = xs
+  DiffList '[] ys = '[]
+  DiffList (x ': xs) ys = If (MemberP x ys) (DiffList xs ys) (x ': DiffList xs ys)
 
 type family Difference a b where
-  Difference a (Set '[]) = a
-  Difference (Set '[]) a = Set '[]
-  Difference (Set (x ': xs)) (Set ys) =
-    TUnion (If (MemberP x ys) (Set '[]) (Set '[x])) (Difference (Set xs) (Set ys))
+  Difference (Set xs) (Set ys) = Set (DiffList xs ys)
 
 type family Insert a s where
   Insert x (Set xs) = Set (Union '[x] xs)
